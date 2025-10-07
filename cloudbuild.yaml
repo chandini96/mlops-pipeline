@@ -1,45 +1,55 @@
+# cloudbuild.yaml for MLOps pipeline
+options:
+  # Use Cloud Logging only (no GCS bucket needed)
+  logging: CLOUD_LOGGING_ONLY
+
+  # If you prefer to store logs in a bucket, uncomment and set your bucket:
+  # logsBucket: gs://mlops-build-logs
+
+# Specify the service account to run the build
+serviceAccount: pro-vigil-mlops@pro-vigil-dev.iam.gserviceaccount.com
+
 steps:
-  # Build Data Fetcher
+  # -------------------------
+  # Build Docker images
+  # -------------------------
+
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-data-fetcher:v1.0.6', './components/data_fetching']
     dir: '.'
 
-  # Build Data Preprocessor
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-data-preprocessor:v1.0.7', './components/preprocessing']
     dir: '.'
 
-  # Build Feature Engineer
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-feature-engineer:v1.0.3', './components/feature_engineering']
     dir: '.'
 
-  # Build Data Splitter
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-data-splitter:v1.0.0', './components/data_splitting']
     dir: '.'
 
-  # Build Multi-Model Trainer
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-multi-model-trainer:v2.0.0', './components/training']
     dir: '.'
 
-  # Build Model Evaluator
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-model-evaluator:v1.0.0', './components/evaluation']
     dir: '.'
 
-  # Build Model Registry
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-model-registry:v2.0.5', './components/model_registry']
     dir: '.'
 
-  # Build Email Notification
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-email-notification:v1.0.0', './components/email_notification']
     dir: '.'
 
-  # Push all images
+  # -------------------------
+  # Push Docker images
+  # -------------------------
+
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-data-fetcher:v1.0.6']
 
@@ -64,6 +74,9 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-email-notification:v1.0.0']
 
+# -------------------------
+# List of images built
+# -------------------------
 images:
   - 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-data-fetcher:v1.0.6'
   - 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-data-preprocessor:v1.0.7'
@@ -72,5 +85,4 @@ images:
   - 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-multi-model-trainer:v2.0.0'
   - 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-model-evaluator:v1.0.0'
   - 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-model-registry:v2.0.5'
-  - 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-email-notification:v1.0.0' 
-     
+  - 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-email-notification:v1.0.0'
