@@ -1,0 +1,3 @@
+# Email notification component dependencies
+# No external packages needed - uses Python standard library
+# smtplib, email.mime, json, logging, datetime, typing are all built-in

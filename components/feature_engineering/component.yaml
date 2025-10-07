@@ -1,0 +1,31 @@
+name: Feature Engineering
+description: Scales dataset features using StandardScaler for ML training.
+
+inputs:
+  - name: input_dataset
+    type: Dataset
+    description: 'The input dataset to process.'
+  - name: target_column
+    type: String
+    description: 'Name of the target column in the dataset.'
+
+outputs:
+  - name: scaled_dataset
+    type: Dataset
+    description: 'Preprocessed and scaled dataset CSV for downstream components.'
+  - name: scaler_path
+    type: String
+    description: 'Serialized StandardScaler object for downstream use.'
+
+implementation:
+  container:
+    image: us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-feature-engineer:v1.0.3
+    args:
+      - --input-dataset
+      - {inputPath: input_dataset}
+      - --target-column
+      - {inputValue: target_column}
+      - --output-dataset
+      - {outputPath: scaled_dataset}
+      - --scaler-path
+      - {outputPath: scaler_path}

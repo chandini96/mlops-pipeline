@@ -1,0 +1,29 @@
+name: Data Splitting
+description: Splits dataset into train and test sets.
+
+inputs:
+- {name: input_dataset, type: Dataset, description: 'Input preprocessed dataset CSV'}
+- {name: target_column, type: String, description: 'Target column for stratification'}
+- {name: test_size, type: Float, description: 'Proportion of dataset for test split', default: 0.2}
+- {name: random_state, type: Int, description: 'Random state for reproducibility', default: 42}
+
+outputs:
+- {name: train_dataset, type: Dataset, description: 'Train dataset CSV'}
+- {name: test_dataset, type: Dataset, description: 'Test dataset CSV'}
+
+implementation:
+  container:
+    image: us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-data-splitter:v1.0.0
+    args:
+    - --input-dataset
+    - {inputPath: input_dataset}
+    - --target-column
+    - {inputValue: target_column}
+    - --test-size
+    - {inputValue: test_size}
+    - --random-state
+    - {inputValue: random_state}
+    - --train-path
+    - {outputPath: train_dataset}
+    - --test-path
+    - {outputPath: test_dataset}

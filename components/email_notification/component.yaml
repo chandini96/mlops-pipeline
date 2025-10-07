@@ -1,0 +1,42 @@
+name: Email Notification
+description: Sends email notifications for pipeline events, model training results, and model registry updates.
+
+inputs:
+- {name: action, type: String, description: 'Action to perform (pipeline_complete, training_complete, model_registered, error).'}
+- {name: recipient_email, type: String, description: 'Email address to send notification to.'}
+- {name: sender_email, type: String, description: 'Email address to send from (Gmail account).', default: 'your-email@gmail.com'}
+- {name: gmail_password, type: String, description: 'Gmail app password for authentication.'}
+- {name: subject, type: String, description: 'Email subject line.'}
+- {name: message_content, type: String, description: 'Main message content.'}
+- {name: pipeline_name, type: String, description: 'Name of the pipeline that triggered the notification.'}
+- {name: model_name, type: String, description: 'Name of the model (if applicable).'}
+- {name: model_metrics, type: String, description: 'Model performance metrics (if applicable).'}
+- {name: error_details, type: String, description: 'Error details (if applicable).'}
+
+outputs:
+- {name: notification_status, type: String, description: 'Status of the email notification (success/failed).'}
+
+implementation:
+  container:
+    image: us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-email-notification:v1.0.0
+    args:
+    - --action
+    - {inputValue: action}
+    - --recipient-email
+    - {inputValue: recipient_email}
+    - --sender-email
+    - {inputValue: sender_email}
+    - --gmail-password
+    - {inputValue: gmail-password}
+    - --subject
+    - {inputValue: subject}
+    - --message-content
+    - {inputValue: message_content}
+    - --pipeline-name
+    - {inputValue: pipeline_name}
+    - --model-name
+    - {inputValue: model_name}
+    - --model-metrics
+    - {inputValue: model_metrics}
+    - --error-details
+    - {inputValue: error_details}

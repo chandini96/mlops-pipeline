@@ -1,0 +1,44 @@
+name: Model Registry
+description: Manages model registration, versioning, and metadata tracking in Vertex AI.
+
+inputs:
+- {name: action, type: String, description: 'Action to perform (register, info, list, compare, promote).'}
+- {name: registry_path, type: String, description: 'GCS path for the model registry.', default: 'gs://mlops-vl2/model-registry'}
+- {name: model_name, type: String, description: 'Name of the model in Vertex AI.'}
+- {name: model_path, type: String, description: 'Path to the trained model directory (exported model files).'}
+- {name: model_type, type: String, description: 'Type of the model (e.g., logistic_regression, random_forest).'}
+- {name: dataset_info, type: String, description: 'Information about the dataset used.'}
+- {name: version, type: String, description: 'Model version (auto-generated if not provided).', default: ''}
+- {name: project, type: String, description: 'Google Cloud Project ID.'}
+- {name: region, type: String, description: 'Region for Vertex AI.'}
+- {name: serving_container_image_uri, type: String, description: 'Container image for serving.'}
+
+outputs:
+- {name: registry_output, type: String, description: 'Details of the registry operation (e.g., created version, metadata).'}
+
+implementation:
+  container:
+    image: us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-model-registry:v2.0.5
+    args:
+    - --action
+    - {inputValue: action}
+    - --registry-path
+    - {inputValue: registry_path}
+    - --model-name
+    - {inputValue: model_name}
+    - --model-path
+    - {inputValue: model_path}
+    - --model-type
+    - {inputValue: model_type}
+    - --dataset-info
+    - {inputValue: dataset_info}
+    - --version
+    - {inputValue: version}
+    - --project
+    - {inputValue: project}
+    - --region
+    - {inputValue: region}
+    - --serving-container-image-uri
+    - {inputValue: serving_container_image_uri}
+    - --output-file
+    - {outputPath: registry_output}

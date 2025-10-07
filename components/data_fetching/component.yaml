@@ -1,0 +1,17 @@
+name: Fetch Dataset from GCS
+description: Downloads dataset from GCS to container-local path
+
+inputs:
+- {name: gcs_path, type: String, description: "Source CSV path in GCS"}
+
+outputs:
+- {name: full_dataset, type: Dataset, description: "Downloaded CSV file"}
+
+implementation:
+  container:
+    image: us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-data-fetcher:v1.0.6
+    args:
+      - --gcs-path
+      - {inputValue: gcs_path}
+      - --full-dataset
+      - {outputPath: full_dataset}

@@ -1,0 +1,12 @@
+steps:
+  # Build Model Evaluator only
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-model-evaluator:v1.0.0', './components/evaluation']
+    dir: '.'
+
+  # Push Model Evaluator
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-model-evaluator:v1.0.0']
+
+images:
+  - 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-model-evaluator:v1.0.0'

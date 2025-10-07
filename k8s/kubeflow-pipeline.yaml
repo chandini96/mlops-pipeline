@@ -1,0 +1,186 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  name: ml-training-pipeline
+  namespace: kubeflow
+spec:
+  serviceAccountName: pipeline-runner
+  entrypoint: ml-training-pipeline
+  
+  templates:
+  - name: ml-training-pipeline
+    dag:
+      tasks:
+      - name: data-fetching
+        template: data-fetching
+      - name: data-preprocessing
+        template: data-preprocessing
+        dependencies: [data-fetching]
+      - name: feature-engineering
+        template: feature-engineering
+        dependencies: [data-preprocessing]
+      - name: model-training
+        template: model-training
+        dependencies: [feature-engineering]
+      - name: model-evaluation
+        template: model-evaluation
+        dependencies: [model-training]
+      - name: model-deployment
+        template: model-deployment
+        dependencies: [model-evaluation]
+        when: "{{tasks.model-evaluation.outputs.parameters.meets_threshold}} == 'True'"
+
+  - name: data-fetching
+    container:
+      image: python:3.9-slim
+      command: [python, -c]
+      args:
+      - |
+        import sys
+        import os
+        sys.path.append("/workspace")
+        from components.data_fetching.data_fetcher import main
+        main()
+      volumeMounts:
+      - name: workspace
+        mountPath: /workspace
+    outputs:
+      parameters:
+      - name: data_path
+        valueFrom:
+          path: /tmp/data_path.txt
+      - name: validation_path
+        valueFrom:
+          path: /tmp/validation_path.txt
+
+  - name: data-preprocessing
+    container:
+      image: python:3.9-slim
+      command: [python, -c]
+      args:
+      - |
+        import sys
+        import os
+        sys.path.append("/workspace")
+        from components.preprocessing.data_preprocessor import main
+        main()
+      volumeMounts:
+      - name: workspace
+        mountPath: /workspace
+    outputs:
+      parameters:
+      - name: train_path
+        valueFrom:
+          path: /tmp/train_path.txt
+      - name: test_path
+        valueFrom:
+          path: /tmp/test_path.txt
+      - name: features_path
+        valueFrom:
+          path: /tmp/features_path.txt
+      - name: encoders_path
+        valueFrom:
+          path: /tmp/encoders_path.txt
+
+  - name: feature-engineering
+    container:
+      image: python:3.9-slim
+      command: [python, -c]
+      args:
+      - |
+        import sys
+        import os
+        sys.path.append("/workspace")
+        from components.feature_engineering.feature_engineer import main
+        main()
+      volumeMounts:
+      - name: workspace
+        mountPath: /workspace
+    outputs:
+      parameters:
+      - name: train_path
+        valueFrom:
+          path: /tmp/train_engineered_path.txt
+      - name: test_path
+        valueFrom:
+          path: /tmp/test_engineered_path.txt
+      - name: features_path
+        valueFrom:
+          path: /tmp/engineered_features_path.txt
+
+  - name: model-training
+    container:
+      image: python:3.9-slim
+      command: [python, -c]
+      args:
+      - |
+        import sys
+        import os
+        sys.path.append("/workspace")
+        from components.training.model_trainer import main
+        main()
+      volumeMounts:
+      - name: workspace
+        mountPath: /workspace
+    outputs:
+      parameters:
+      - name: best_model_path
+        valueFrom:
+          path: /tmp/best_model_path.txt
+      - name: training_results_path
+        valueFrom:
+          path: /tmp/training_results_path.txt
+      - name: best_algorithm
+        valueFrom:
+          path: /tmp/best_algorithm.txt
+      - name: best_score
+        valueFrom:
+          path: /tmp/best_score.txt
+
+  - name: model-evaluation
+    container:
+      image: python:3.9-slim
+      command: [python, -c]
+      args:
+      - |
+        import sys
+        import os
+        sys.path.append("/workspace")
+        from components.evaluation.model_evaluator import main
+        main()
+      volumeMounts:
+      - name: workspace
+        mountPath: /workspace
+    outputs:
+      parameters:
+      - name: evaluation_results_path
+        valueFrom:
+          path: /tmp/evaluation_results_path.txt
+      - name: evaluation_report_path
+        valueFrom:
+          path: /tmp/evaluation_report_path.txt
+      - name: plot_paths
+        valueFrom:
+          path: /tmp/plot_paths.txt
+      - name: meets_threshold
+        valueFrom:
+          path: /tmp/meets_threshold.txt
+      - name: primary_metric
+        valueFrom:
+          path: /tmp/primary_metric.txt
+      - name: primary_score
+        valueFrom:
+          path: /tmp/primary_score.txt
+
+  - name: model-deployment
+    container:
+      image: python:3.9-slim
+      command: [echo, "Model deployment would happen here"]
+      volumeMounts:
+      - name: workspace
+        mountPath: /workspace
+
+  volumes:
+  - name: workspace
+    persistentVolumeClaim:
+      claimName: ml-pipeline-workspace 

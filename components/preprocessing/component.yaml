@@ -1,0 +1,23 @@
+name: Preprocess Dataset
+description: Cleans and prepares the dataset for feature engineering.
+
+inputs:
+- {name: input_dataset, type: Dataset, description: 'The input dataset to preprocess.'}
+
+outputs:
+- {name: preprocessed_dataset, type: Dataset, description: 'The preprocessed dataset CSV.'}
+- {name: features_path, type: String, description: 'Feature names JSON.'}
+- {name: encoders_path, type: String, description: 'Encoders JSON.'}
+
+implementation:
+  container:
+    image: us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-data-preprocessor:v1.0.7
+    args:
+    - --input_csv
+    - {inputPath: input_dataset}
+    - --preprocessed_dataset_output
+    - {outputPath: preprocessed_dataset}
+    - --features_output
+    - {outputPath: features_path}
+    - --encoders_output
+    - {outputPath: encoders_path}

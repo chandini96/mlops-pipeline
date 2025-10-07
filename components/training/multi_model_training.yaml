@@ -1,0 +1,22 @@
+name: Multi-Model Training
+description: Train multiple classifiers (Logistic Regression, Decision Tree, Random Forest) on pre-split data
+
+inputs:
+- {name: train_dataset, type: Dataset, description: "Training dataset"}
+- {name: test_dataset, type: Dataset, description: "Testing dataset"}
+- {name: target_column, type: String, description: "Target column"}
+
+outputs:
+- {name: trained_model_dirs, type: String, description: "Comma-separated list of directories containing trained models"}
+- {name: model_artifacts, type: Dataset, description: "Directory containing all trained model files"}
+
+implementation:
+  container:
+    image: us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-multi-model-trainer:v2.0.0
+    args: [
+      --train-dataset, {inputPath: train_dataset},
+      --test-dataset, {inputPath: test_dataset},
+      --target-column, {inputValue: target_column},
+      --model-paths-dir, {outputPath: model_artifacts},
+      --output-file, {outputPath: trained_model_dirs}
+    ]

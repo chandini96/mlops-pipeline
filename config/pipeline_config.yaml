@@ -1,0 +1,101 @@
+# Pipeline Configuration
+pipeline:
+  name: "ml-training-pipeline"
+  description: "Complete ML pipeline from data fetching to model training"
+  version: "1.0.0"
+
+# Data Configuration
+data:
+  source:
+    type: "gcs"  # gcs, api, file, database
+    gcs_path: "gs://mlops-vl2/Heart_Disease_Prediction.csv"  # Heart Disease dataset
+    local_path: "data/raw/heart_disease_dataset.csv"
+  
+  preprocessing:
+    test_size: 0.2
+    random_state: 42
+    target_column: "Heart Disease"  # Heart Disease dataset target column
+    
+  feature_engineering:
+    scaling_method: "standard"  # standard, minmax, robust
+    feature_selection: true
+    n_features: 10
+
+# Model Configuration
+model:
+  type: "classification"  # classification, regression
+  algorithms:
+    - "random_forest"
+    - "logistic_regression"
+    - "svm"
+    - "xgboost"
+  
+  hyperparameter_tuning:
+    enabled: true
+    method: "grid_search"  # grid_search, random_search, bayesian
+    cv_folds: 5
+    n_iterations: 20
+    
+  random_forest:
+    n_estimators: [100, 200, 300]
+    max_depth: [10, 20, None]
+    min_samples_split: [2, 5, 10]
+    
+  logistic_regression:
+    C: [0.1, 1.0, 10.0]
+    penalty: ["l1", "l2"]
+    solver: ["liblinear", "saga"]
+    
+  svm:
+    C: [0.1, 1.0, 10.0]
+    kernel: ["rbf", "linear"]
+    gamma: ["scale", "auto"]
+    
+  xgboost:
+    n_estimators: [100, 200, 300]
+    max_depth: [3, 6, 9]
+    learning_rate: [0.01, 0.1, 0.3]
+
+# Evaluation Configuration
+evaluation:
+  metrics:
+    classification:
+      - "accuracy"
+      - "precision"
+      - "recall"
+      - "f1_score"
+      - "roc_auc"
+    regression:
+      - "mse"
+      - "mae"
+      - "r2_score"
+  
+  threshold: 0.8  # Minimum performance threshold
+
+# Deployment Configuration
+deployment:
+  model_registry: "mlflow"
+  model_name: "iris_classifier"
+  model_version: "v1.0.0"
+  
+  serving:
+    type: "rest_api"  # rest_api, grpc, tensorflow_serving
+    port: 8080
+    replicas: 3
+    
+  monitoring:
+    enabled: true
+    metrics_endpoint: "/metrics"
+    health_check: "/health"
+
+# Storage Configuration
+storage:
+  artifacts_path: "gs://ml-pipeline-artifacts"
+  model_path: "models/"
+  data_path: "data/"
+  
+# Logging Configuration
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "logs/pipeline.log" 

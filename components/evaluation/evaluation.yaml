@@ -1,0 +1,26 @@
+name: Evaluation & Gating
+description: Evaluate multiple trained models, apply accuracy threshold, and select the best model for registration
+
+inputs:
+- {name: model_artifacts, type: Dataset, description: "Directory containing all trained model files"}
+- {name: model_dirs, type: String, description: "Comma-separated list of trained model directories"}
+- {name: test_dataset, type: Dataset, description: "Test dataset CSV"}
+- {name: target_column, type: String, description: "Target column name"}
+- {name: metric_key, type: String, default: "accuracy", description: "Metric to select best model (default: accuracy)"}
+- {name: metric_threshold, type: Float, default: 0.84, description: "Minimum metric threshold for gating"}
+
+outputs:
+- {name: best_model_dir, type: String, description: "Directory of the best model passing the threshold, or NONE if no model passed"}
+
+implementation:
+  container:
+    image: us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-model-evaluator:v1.0.0
+    args: [
+      --model-artifacts, {inputPath: model_artifacts},
+      --model-dirs, {inputValue: model_dirs},
+      --test-dataset, {inputPath: test_dataset},
+      --target-column, {inputValue: target_column},
+      --metric-key, {inputValue: metric_key},
+      --metric-threshold, {inputValue: metric_threshold},
+      --output-file, {outputPath: best_model_dir}
+    ]

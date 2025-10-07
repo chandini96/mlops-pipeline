@@ -1,0 +1,72 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+
+# PyCharm
+.idea/
+
+# VS Code
+.vscode/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+logs/
+*.log
+
+# Data files (keep structure but ignore actual data)
+data/raw/*.csv
+data/processed/*.csv
+data/engineered/*.csv
+models/*.pkl
+evaluation/*.png
+evaluation/*.json
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# Kubernetes
+*.yaml.bak
+*.yml.bak
+
+# Docker
+.dockerignore
+
+# MLflow
+mlruns/
+mlartifacts/
+
+# Google Cloud
+*.json
+!config/*.json 
