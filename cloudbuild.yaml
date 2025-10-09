@@ -1,19 +1,12 @@
 # # cloudbuild.yaml for MLOps pipeline
 # options:
-#   # Use Cloud Logging only (no GCS bucket needed)
 #   logging: CLOUD_LOGGING_ONLY
-
-#   # If you prefer to store logs in a bucket, uncomment and set your bucket:
-#   # logsBucket: gs://mlops-build-logs
-
-# # Specify the service account to run the build
 # serviceAccount: pro-vigil-mlops@pro-vigil-dev.iam.gserviceaccount.com
 
 steps:
   # -------------------------
   # Build Docker images
   # -------------------------
-
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-data-fetcher:v1.0.6', './components/data_fetching']
     dir: '.'
@@ -49,7 +42,6 @@ steps:
   # -------------------------
   # Push Docker images
   # -------------------------
-
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-data-fetcher:v1.0.6']
 
@@ -74,6 +66,29 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-email-notification:v1.0.0']
 
+  # -------------------------
+  # Ensure gcloud CLI is installed (optional safety)
+  # -------------------------
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        echo "✅ Verifying gcloud installation..."
+        gcloud --version || (echo "❌ gcloud not found" && exit 1)
+
+  # -------------------------
+  # Publish Pub/Sub notification
+  # -------------------------
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        gcloud pubsub topics publish cloud-build-done \
+          --message '{"status": "SUCCESS", "trigger": "docker-build-trigger"}'
+        echo "✅ Pub/Sub notification sent successfully."
+
 # -------------------------
 # List of images built
 # -------------------------
@@ -85,6 +100,4 @@ images:
   - 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-multi-model-trainer:v2.0.0'
   - 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-model-evaluator:v1.0.0'
   - 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-model-registry:v2.0.5'
-  - 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-email-notification:v1.0.0'  
-
-this is my cloud build yaml, add the installation step
+  - 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-email-notification:v1.0.0'

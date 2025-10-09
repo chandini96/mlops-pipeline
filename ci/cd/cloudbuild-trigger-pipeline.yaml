@@ -4,7 +4,7 @@ options:
 serviceAccount: projects/pro-vigil-dev/serviceAccounts/pro-vigil-mlops@pro-vigil-dev.iam.gserviceaccount.com
 
 steps:
-  # Single step: Install packages and run the pipeline
+  # Step 1: Install packages and submit pipeline
   - name: 'python:3.11'
     entrypoint: 'bash'
     args:
@@ -12,8 +12,29 @@ steps:
       - |
         pip install --upgrade pip
         pip install google-cloud-aiplatform[pipelines] kfp
-        
-        # Run the pipeline from repo root - absolute paths will handle component loading
-        python pipeline/main_pipeline.py
+
+        python - <<'EOF'
+        from google.cloud import aiplatform
+        import os
+        import json
+
+        PROJECT_ID = "pro-vigil-dev"
+        REGION = "us-central1"
+        PIPELINE_NAME = "mlops-main-pipeline"
+        PIPELINE_YAML = "gs://pro-vigil-mlops-bucket/pipelines/main_pipeline.yaml"
+
+        aiplatform.init(project=PROJECT_ID, location=REGION)
+
+        pipeline_job = aiplatform.PipelineJob(
+            display_name=f"{PIPELINE_NAME}-run",
+            template_path=PIPELINE_YAML,
+            parameter_values={
+                "BUCKET_NAME": "pro-vigil-mlops-bucket",
+                "ARTIFACT_REGISTRY": "us-central1-docker.pkg.dev/pro-vigil-dev/mlops"
+            }
+        )
+
+        pipeline_job.run(sync=False)
+        EOF
 
 images: []
