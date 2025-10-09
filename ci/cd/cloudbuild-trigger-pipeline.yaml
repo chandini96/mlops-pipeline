@@ -1,0 +1,19 @@
+# cloudbuild-trigger-pipeline.yaml
+options:
+  logging: CLOUD_LOGGING_ONLY
+serviceAccount: projects/pro-vigil-dev/serviceAccounts/pro-vigil-mlops@pro-vigil-dev.iam.gserviceaccount.com
+
+steps:
+  # Single step: Install packages and run the pipeline
+  - name: 'python:3.11'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        pip install --upgrade pip
+        pip install google-cloud-aiplatform[pipelines] kfp
+        
+        # Run the pipeline from repo root - absolute paths will handle component loading
+        python pipeline/main_pipeline.py
+
+images: []

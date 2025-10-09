@@ -1,0 +1,271 @@
+# Main MLOps Pipeline Configuration
+# This YAML defines the complete ML pipeline workflow
+
+name: "mlops-main-pipeline"
+description: "Complete MLOps pipeline for heart disease prediction"
+version: "1.0.0"
+
+# Pipeline metadata
+metadata:
+  author: "MLOps Team"
+  created_date: "2025-10-07"
+  last_updated: "2025-10-07"
+  project_id: "pro-vigil-dev"
+  region: "us-central1"
+
+# Pipeline configuration
+pipeline:
+  # Data configuration
+  data:
+    source:
+      type: "csv"
+      path: "gs://pro-vigil-mlops-bucket/data/heart_disease.csv"
+      format: "csv"
+    
+    preprocessing:
+      target_column: "target"
+      feature_columns:
+        - "age"
+        - "sex"
+        - "cp"
+        - "trestbps"
+        - "chol"
+        - "fbs"
+        - "restecg"
+        - "thalach"
+        - "exang"
+        - "oldpeak"
+        - "slope"
+        - "ca"
+        - "thal"
+      
+      train_split: 0.8
+      validation_split: 0.1
+      test_split: 0.1
+      
+      scaling_method: "standard"
+      handle_missing: "drop"
+      outlier_detection: true
+
+  # Model configuration
+  models:
+    - name: "random_forest"
+      type: "RandomForestClassifier"
+      parameters:
+        n_estimators: 100
+        max_depth: 10
+        random_state: 42
+        
+    - name: "logistic_regression"
+      type: "LogisticRegression"
+      parameters:
+        random_state: 42
+        max_iter: 1000
+        
+    - name: "gradient_boosting"
+      type: "GradientBoostingClassifier"
+      parameters:
+        n_estimators: 100
+        learning_rate: 0.1
+        random_state: 42
+
+  # Training configuration
+  training:
+    strategy: "multi_model"
+    cross_validation:
+      enabled: true
+      folds: 5
+      scoring: "accuracy"
+    
+    hyperparameter_tuning:
+      enabled: true
+      method: "grid_search"
+      cv_folds: 3
+      
+    early_stopping:
+      enabled: true
+      patience: 10
+      monitor: "val_accuracy"
+
+  # Evaluation configuration
+  evaluation:
+    metrics:
+      - "accuracy"
+      - "precision"
+      - "recall"
+      - "f1_score"
+      - "roc_auc"
+      - "confusion_matrix"
+    
+    validation:
+      method: "holdout"
+      test_size: 0.2
+      random_state: 42
+
+  # Model registry configuration
+  model_registry:
+    enabled: true
+    registry_name: "heart-disease-models"
+    versioning_strategy: "semantic"
+    auto_approve: false
+    
+    quality_gates:
+      min_accuracy: 0.85
+      min_precision: 0.80
+      min_recall: 0.80
+      min_f1_score: 0.80
+
+  # Deployment configuration
+  deployment:
+    strategy: "blue_green"
+    environment: "production"
+    
+    endpoints:
+      prediction:
+        name: "heart-disease-predictor"
+        region: "us-central1"
+        machine_type: "n1-standard-2"
+        min_replicas: 1
+        max_replicas: 10
+        
+    monitoring:
+      enabled: true
+      metrics:
+        - "prediction_latency"
+        - "prediction_accuracy"
+        - "request_count"
+        - "error_rate"
+
+# Pipeline steps definition
+steps:
+  - name: "data_fetching"
+    component: "mlops-data-fetcher"
+    image: "us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-data-fetcher:latest"
+    inputs:
+      source_path: "${data.source.path}"
+    outputs:
+      raw_data: "gs://pro-vigil-mlops-bucket/data/raw/heart_disease_raw.csv"
+    
+  - name: "data_preprocessing"
+    component: "mlops-data-preprocessor"
+    image: "us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-data-preprocessor:latest"
+    inputs:
+      raw_data: "${steps.data_fetching.outputs.raw_data}"
+      target_column: "${data.preprocessing.target_column}"
+      feature_columns: "${data.preprocessing.feature_columns}"
+    outputs:
+      processed_data: "gs://pro-vigil-mlops-bucket/data/processed/heart_disease_processed.csv"
+    
+  - name: "feature_engineering"
+    component: "mlops-feature-engineer"
+    image: "us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-feature-engineer:latest"
+    inputs:
+      processed_data: "${steps.data_preprocessing.outputs.processed_data}"
+    outputs:
+      features: "gs://pro-vigil-mlops-bucket/data/features/heart_disease_features.csv"
+    
+  - name: "data_splitting"
+    component: "mlops-data-splitter"
+    image: "us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-data-splitter:latest"
+    inputs:
+      features: "${steps.feature_engineering.outputs.features}"
+      train_split: "${data.preprocessing.train_split}"
+      validation_split: "${data.preprocessing.validation_split}"
+      test_split: "${data.preprocessing.test_split}"
+    outputs:
+      train_data: "gs://pro-vigil-mlops-bucket/data/splits/train.csv"
+      validation_data: "gs://pro-vigil-mlops-bucket/data/splits/validation.csv"
+      test_data: "gs://pro-vigil-mlops-bucket/data/splits/test.csv"
+    
+  - name: "model_training"
+    component: "mlops-multi-model-trainer"
+    image: "us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-multi-model-trainer:latest"
+    inputs:
+      train_data: "${steps.data_splitting.outputs.train_data}"
+      validation_data: "${steps.data_splitting.outputs.validation_data}"
+      models_config: "${models}"
+    outputs:
+      trained_models: "gs://pro-vigil-mlops-bucket/models/trained/"
+      training_metrics: "gs://pro-vigil-mlops-bucket/metrics/training/"
+    
+  - name: "model_evaluation"
+    component: "mlops-model-evaluator"
+    image: "us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-model-evaluator:latest"
+    inputs:
+      test_data: "${steps.data_splitting.outputs.test_data}"
+      trained_models: "${steps.model_training.outputs.trained_models}"
+      evaluation_config: "${evaluation}"
+    outputs:
+      evaluation_results: "gs://pro-vigil-mlops-bucket/metrics/evaluation/"
+      best_model: "gs://pro-vigil-mlops-bucket/models/best/"
+    
+  - name: "model_registry"
+    component: "mlops-model-registry"
+    image: "us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-model-registry:latest"
+    inputs:
+      best_model: "${steps.model_evaluation.outputs.best_model}"
+      evaluation_results: "${steps.model_evaluation.outputs.evaluation_results}"
+      registry_config: "${model_registry}"
+    outputs:
+      registered_model: "gs://pro-vigil-mlops-bucket/registry/"
+    
+  - name: "email_notification"
+    component: "mlops-email-notification"
+    image: "us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-email-notification:latest"
+    inputs:
+      evaluation_results: "${steps.model_evaluation.outputs.evaluation_results}"
+      registered_model: "${steps.model_registry.outputs.registered_model}"
+    outputs:
+      notification_sent: "gs://pro-vigil-mlops-bucket/notifications/"
+
+# Pipeline execution configuration
+execution:
+  # Resource requirements
+  resources:
+    cpu: "2"
+    memory: "8Gi"
+    gpu: "0"
+  
+  # Retry configuration
+  retry:
+    max_attempts: 3
+    backoff_factor: 2
+  
+  # Timeout configuration
+  timeout:
+    step_timeout: "30m"
+    pipeline_timeout: "2h"
+  
+  # Parallel execution
+  parallel:
+    enabled: true
+    max_parallel_steps: 3
+
+# Monitoring and logging
+monitoring:
+  enabled: true
+  log_level: "INFO"
+  
+  metrics:
+    - name: "pipeline_duration"
+      type: "counter"
+    - name: "step_success_rate"
+      type: "gauge"
+    - name: "model_accuracy"
+      type: "gauge"
+  
+  alerts:
+    - name: "pipeline_failure"
+      condition: "step_failed"
+      severity: "critical"
+    - name: "low_model_accuracy"
+      condition: "model_accuracy < 0.85"
+      severity: "warning"
+
+# Environment variables
+environment:
+  PROJECT_ID: "pro-vigil-dev"
+  REGION: "us-central1"
+  BUCKET_NAME: "pro-vigil-mlops-bucket"
+  ARTIFACT_REGISTRY: "us-central1-docker.pkg.dev/pro-vigil-dev/mlops"
+  LOG_LEVEL: "INFO"

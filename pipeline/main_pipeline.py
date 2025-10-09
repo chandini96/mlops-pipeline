@@ -11,6 +11,7 @@ from kfp import dsl, compiler, components
 from google.cloud import aiplatform
 from datetime import datetime
 import logging
+import os
 
 # -------------------------
 # Constants
@@ -20,6 +21,9 @@ REGION = "us-central1"
 # PIPELINE_ROOT = "gs://mlops-vl2/pipeline-root"  # Commented out to use Vertex AI default
 MODEL_DISPLAY_NAME = "heart-disease-mlops-model"
 EXPERIMENT_NAME = "heart-disease-classification-experiment"
+
+# Component root path - robust absolute path handling
+COMPONENT_ROOT = os.path.join(os.path.dirname(__file__), "..", "components")
 
 logging.basicConfig(level=logging.INFO)
 
@@ -38,14 +42,28 @@ def full_mlops_pipeline_custom_images(
 ):
     """Kubeflow Pipeline DAG"""
 
-    # Load components (Docker images are defined in each YAML)
-    data_fetch_op = components.load_component_from_file("components/data_fetching/component.yaml")
-    preprocessing_op = components.load_component_from_file("components/preprocessing/component.yaml")
-    feature_engineering_op = components.load_component_from_file("components/feature_engineering/component.yaml")
-    data_split_op = components.load_component_from_file("components/data_splitting/component.yaml")
-    train_op = components.load_component_from_file("components/training/multi_model_training.yaml")
-    evaluation_op = components.load_component_from_file("components/evaluation/evaluation.yaml")
-    model_registry_op = components.load_component_from_file("components/model_registry/component.yaml")
+    # Load components (Docker images are defined in each YAML) - using absolute paths
+    data_fetch_op = components.load_component_from_file(
+        os.path.join(COMPONENT_ROOT, "data_fetching/component.yaml")
+    )
+    preprocessing_op = components.load_component_from_file(
+        os.path.join(COMPONENT_ROOT, "preprocessing/component.yaml")
+    )
+    feature_engineering_op = components.load_component_from_file(
+        os.path.join(COMPONENT_ROOT, "feature_engineering/component.yaml")
+    )
+    data_split_op = components.load_component_from_file(
+        os.path.join(COMPONENT_ROOT, "data_splitting/component.yaml")
+    )
+    train_op = components.load_component_from_file(
+        os.path.join(COMPONENT_ROOT, "training/multi_model_training.yaml")
+    )
+    evaluation_op = components.load_component_from_file(
+        os.path.join(COMPONENT_ROOT, "model_evaluation/evaluation.yaml")
+    )
+    model_registry_op = components.load_component_from_file(
+        os.path.join(COMPONENT_ROOT, "model_registry/component.yaml")
+    )
 
     # --- Step 1: Data Fetching ---
     fetch_task = data_fetch_op(

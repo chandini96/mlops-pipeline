@@ -1,13 +1,13 @@
-# cloudbuild.yaml for MLOps pipeline
-options:
-  # Use Cloud Logging only (no GCS bucket needed)
-  logging: CLOUD_LOGGING_ONLY
+# # cloudbuild.yaml for MLOps pipeline
+# options:
+#   # Use Cloud Logging only (no GCS bucket needed)
+#   logging: CLOUD_LOGGING_ONLY
 
-  # If you prefer to store logs in a bucket, uncomment and set your bucket:
-  # logsBucket: gs://mlops-build-logs
+#   # If you prefer to store logs in a bucket, uncomment and set your bucket:
+#   # logsBucket: gs://mlops-build-logs
 
-# Specify the service account to run the build
-serviceAccount: pro-vigil-mlops@pro-vigil-dev.iam.gserviceaccount.com
+# # Specify the service account to run the build
+# serviceAccount: pro-vigil-mlops@pro-vigil-dev.iam.gserviceaccount.com
 
 steps:
   # -------------------------
@@ -85,4 +85,6 @@ images:
   - 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-multi-model-trainer:v2.0.0'
   - 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-model-evaluator:v1.0.0'
   - 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-model-registry:v2.0.5'
-  - 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-email-notification:v1.0.0'
+  - 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-email-notification:v1.0.0'  
+
+this is my cloud build yaml, add the installation step
