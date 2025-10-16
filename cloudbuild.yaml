@@ -1,7 +1,13 @@
-# # cloudbuild.yaml for MLOps pipeline
-# options:
-#   logging: CLOUD_LOGGING_ONLY
-# serviceAccount: pro-vigil-mlops@pro-vigil-dev.iam.gserviceaccount.com
+# cloudbuild.yaml for MLOps pipeline
+
+options:
+  # Store logs in Cloud Logging and also GCS bucket
+  logging: CLOUD_LOGGING_ONLY
+  # Uncomment and set if you want logs in a bucket as well
+  # logsBucket: gs://mlops-build-logs
+
+# Specify the service account
+serviceAccount: pro-vigil-mlops@pro-vigil-dev.iam.gserviceaccount.com
 
 steps:
   # -------------------------
@@ -9,35 +15,27 @@ steps:
   # -------------------------
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-data-fetcher:v1.0.6', './components/data_fetching']
-    dir: '.'
-
+  
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-data-preprocessor:v1.0.7', './components/preprocessing']
-    dir: '.'
 
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-feature-engineer:v1.0.3', './components/feature_engineering']
-    dir: '.'
 
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-data-splitter:v1.0.0', './components/data_splitting']
-    dir: '.'
 
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-multi-model-trainer:v2.0.0', './components/training']
-    dir: '.'
 
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-model-evaluator:v1.0.0', './components/evaluation']
-    dir: '.'
 
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-model-registry:v2.0.5', './components/model_registry']
-    dir: '.'
 
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-email-notification:v1.0.0', './components/email_notification']
-    dir: '.'
 
   # -------------------------
   # Push Docker images
@@ -67,24 +65,14 @@ steps:
     args: ['push', 'us-central1-docker.pkg.dev/pro-vigil-dev/mlops/mlops-email-notification:v1.0.0']
 
   # -------------------------
-  # Ensure gcloud CLI is installed (optional safety)
+  # Install gcloud and publish Pub/Sub notification
   # -------------------------
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: bash
     args:
       - -c
       - |
-        echo "✅ Verifying gcloud installation..."
-        gcloud --version || (echo "❌ gcloud not found" && exit 1)
-
-  # -------------------------
-  # Publish Pub/Sub notification
-  # -------------------------
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: bash
-    args:
-      - -c
-      - |
+        echo "📦 Sending Pub/Sub notification..."
         gcloud pubsub topics publish cloud-build-done \
           --message '{"status": "SUCCESS", "trigger": "docker-build-trigger"}'
         echo "✅ Pub/Sub notification sent successfully."
